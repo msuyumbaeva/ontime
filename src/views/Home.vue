@@ -37,6 +37,7 @@ export default {
       localStorage.removeItem('startTime');
       localStorage.removeItem('period');
       localStorage.removeItem('timeLeft');
+      localStorage.removeItem('remainTime');
     }
   },
   mounted(){
