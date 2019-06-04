@@ -9,7 +9,7 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item">
-                <a class="nav-link" href="#">Трекинг</a>
+                <router-link to="/tracking" class="nav-link">Трекинг</router-link>
             </li>
             <li class="nav-item">
                 <router-link to="/users" class="nav-link">Админпанель</router-link>
