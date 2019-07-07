@@ -3,8 +3,7 @@
     <Navbar/>
     <div class="homecontent">
       <StartForm v-if="!isStarted" @startTimer="startTimer" />
-      <Timer v-else @stopTimer="stopTimer"/>
-      
+      <Timer v-else @stopTimer="stopTimer"/> 
     </div>
      
   </div>
@@ -28,8 +27,9 @@ export default {
     }
   },
   methods:{
-    startTimer(time){
-        localStorage.setItem('period', time);
+    startTimer(obj){
+        localStorage.setItem('period', obj.time);
+        localStorage.setItem('device', obj.device);
         this.isStarted = true;
     },
     stopTimer(){
@@ -38,6 +38,9 @@ export default {
       localStorage.removeItem('period');
       localStorage.removeItem('timeLeft');
       localStorage.removeItem('remainTime');
+      localStorage.removeItem('device');
+      localStorage.removeItem('actionId');
+      localStorage.removeItem('pauseId');
     }
   },
   mounted(){

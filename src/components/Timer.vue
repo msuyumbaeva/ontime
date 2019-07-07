@@ -1,5 +1,8 @@
 <template>
     <div class="timer">
+        <audio ref="myAudio">
+            <source src="../assets/beeps.mp3" type="audio/mpeg">
+        </audio>
         <div class="circle" style="margin-bottom: 22px">
             <svg width="300" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
                 <g transform="translate(110,110)">
@@ -22,6 +25,7 @@
 </template>
 
 <script>
+import jwtDecode from 'jwt-decode'
 import { setTimeout } from 'timers';
 let length = Math.PI * 2 * 100;
 
@@ -30,6 +34,8 @@ export default {
     mounted(){
         this.$refs.progressBar.style.strokeDasharray = length;
         this.wholeTime = localStorage.getItem('period');
+        this.actionId = localStorage.getItem('actionId');
+        this.pauseId = localStorage.getItem('pauseId');
         if(localStorage.getItem('timeLeft')){
             this.timeLeft = localStorage.getItem('timeLeft');
             this.isStarted = this.isPaused = true;
@@ -63,6 +69,8 @@ export default {
             this.intervalTimer = setInterval(()=>{
                 this.timeLeft = Math.round((this.remainTime - Date.now()) / 1000);
                 this.update();
+                if(this.timeLeft < 1 && Math.abs(this.timeLeft) % 60 == 0)
+                    this.$refs.myAudio.play();
             }, 1000);
         },
         pauseTimer(){
@@ -71,6 +79,14 @@ export default {
                     localStorage.setItem('startTime',new Date());
                     this.remainTime = Date.now() + (this.wholeTime * 1000);
                     localStorage.setItem('remainTime', this.remainTime);
+                    const token = jwtDecode(localStorage.token);
+                    this.dispatch('startAction',{
+                        user: token.user_id, 
+                        device: localStorage.device, 
+                        planPeriod: this.wholeTime,
+                        createdDate: localStorage.startTime,
+                        planStopDate: this.remainTime
+                    })                    
                 }
                 this.timer();
                 this.isStarted = true;                
@@ -80,25 +96,61 @@ export default {
                 this.timer();
                 this.isPaused = this.isPaused ? false : true
                 localStorage.removeItem('timeLeft');
+                this.dispatch('remainAction',{
+                    id: this.actionId, 
+                    pid: this.pauseId,
+                    leftTime: this.timeLeft,
+                    remainTime: Date.now(),
+                    planStopDate: this.remainTime
+                }) 
             }else{
                 clearInterval(this.intervalTimer);
                 localStorage.setItem('timeLeft', this.timeLeft);
                 this.isPaused = this.isPaused ? false : true
+                this.dispatch('pauseAction',{
+                    id: this.actionId, 
+                    passedTime: this.wholeTime - this.timeLeft,
+                    pauseTime: Date.now()
+                }) 
             }
         },
         stopTimer(){
             clearInterval(this.intervalTimer);
+            this.dispatch('stopAction',{
+                id: this.actionId, 
+                factPeriod: this.wholeTime - this.timeLeft,
+                stoppedDate: Date.now()
+            })
             this.$emit('stopTimer');
+        },
+        dispatch(name,action){
+            this.$store.dispatch(name,action)
+            .then(res=>{
+                if(res.actionId){
+                    this.actionId = res.actionId;
+                    localStorage.setItem('actionId',this.actionId);
+                }
+                else
+                    if(res.pauseId){
+                        this.pauseId = res.pauseId;
+                        localStorage.setItem('pauseId',this.pauseId);
+                    }
+            })
+            .catch(err=>{
+                console.log(err);
+            })
         }
     },
     data(){
-        return{
+        return {
             intervalTimer:null,
             timeLeft:null,
             wholeTime : 5,// manage this to set the whole time 
             isPaused : false,
             isStarted : false,
-            remainTime : Date.now()
+            remainTime : Date.now(),
+            actionId:0,
+            pauseId: 0
         }
     }
 }

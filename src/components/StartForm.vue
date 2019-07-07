@@ -11,8 +11,13 @@
                 <td>:</td>
                 <td><TimePicker :max="Number(59)" @updateTime="updateTime" type="m"/></td>
             </tr>
-        </table> 
-        <button class="btn btn-success my-2 my-sm-0" type="submit" @click="$emit('startTimer',hours*3600+minutes*60)">Start</button>      
+        </table>       
+        <div class="form-group col-6 col-sm-3 mx-auto my-4">
+            <select id="inputState" class="form-control" v-model="device">
+              <option v-for="d in devices" :key="d._id" :value="d._id">{{d.name}}</option>
+            </select>
+        </div>
+        <button class="btn btn-success my-2 my-sm-0" type="submit" @click="$emit('startTimer',{time:hours*3600+minutes*60,device:device})">Start</button>
     </div>
 </template>
 
@@ -26,7 +31,8 @@ export default {
   data(){
       return{
           minutes: 0,
-          hours: 1
+          hours: 1,
+          device: 0
       }
   },
   methods:{
@@ -36,7 +42,25 @@ export default {
         else 
             if(item.type == 'm')
                 this.minutes = item.value;
+    },
+    getDevices(){
+      this.$store.dispatch('getDevices')
+      .then(()=>{
+          if(this.devices.length>0)
+            this.device = this.devices[0]._id;
+      })
+        .catch(err=>{
+          console.error(err);
+        }) ;
     }
+  },
+  computed: {
+    devices(){
+      return this.$store.state.devices;
+    } 
+  },
+  mounted(){
+      this.getDevices();
   }
 }
 </script>

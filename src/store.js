@@ -5,7 +5,7 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    host: 'http://localhost:3000',
+    host: 'http://ontimeserver.cloudno.de',
     users: [],
     devices: [],
     gamers: []
@@ -26,14 +26,21 @@ export default new Vuex.Store({
     addGamer(state,gamer){
       state.gamers.push(gamer);
     },
-    addAction(state,action){
-      state.gamers.push(action);
+    deleteAction(state,id){
+      let i = state.gamers.findIndex(g=>{
+        return g.user._id == id.user;
+      })
+      let j = state.gamers[i].actions.findIndex(a=>{
+        return a._id == id.action;
+      })
+      state.gamers[i].actions.splice(j,1);
     }
   },
   actions: {
     async getUsers({state,commit}){
       try{
-        const res = await axios.get(`${state.host}/users/`);
+        const token = localStorage.getItem('token')
+        const res = await axios.get(`${state.host}/users/`,{ headers: { 'Authorization': 'Bearer '+ token }});
         commit('setUsers',res.data.users);
       }
       catch(err){
@@ -42,7 +49,8 @@ export default new Vuex.Store({
     },
     async createUser({state,commit},user){
       try{
-        const res = await axios.post(`${state.host}/users/`,user);
+        const token = localStorage.getItem('token')
+        const res = await axios.post(`${state.host}/users/`,user,{ headers: { 'Authorization': 'Bearer '+ token }});
         commit('addUser',res.data.user);
       }
       catch(err){
@@ -51,7 +59,8 @@ export default new Vuex.Store({
     },
     async getDevices({state,commit}){
       try{
-        const res = await axios.get(`${state.host}/devices/`);
+        const token = localStorage.getItem('token')
+        const res = await axios.get(`${state.host}/devices/`,{ headers: { 'Authorization': 'Bearer '+ token }});
         commit('setDevices',res.data.devices);
       }
       catch(err){
@@ -60,7 +69,8 @@ export default new Vuex.Store({
     },
     async createDevice({state,commit},device){
       try{
-        const res = await axios.post(`${state.host}/devices/`,device);
+        const token = localStorage.getItem('token')
+        const res = await axios.post(`${state.host}/devices/`,device,{ headers: { 'Authorization': 'Bearer '+ token }});
         commit('addDevice',res.data.device);
       }
       catch(err){
@@ -69,23 +79,76 @@ export default new Vuex.Store({
     },
     async getGamers({state,dispatch,commit}){
       try{
+        const token = localStorage.getItem('token')
         await dispatch('getUsers');
         state.gamers = [];
         state.users.map(async u=>{
-          if( u.role =='Игрок' ){
-            const res = await axios.get(`${state.host}/actions/${u._id}`);
+            const res = await axios.get(`${state.host}/actions/${u._id}`,{ headers: { 'Authorization': 'Bearer '+ token }});
             commit('addGamer',res.data);
-          }
         })
       }
       catch(err){
         throw(err);
       }
     },
-    async startAction({state,commit},action){
+    async startAction({state},action){
       try{
-        const res = await axios.post(`${state.host}/actions/`,action);
-        commit('addAction',res.data.action);
+        const token = localStorage.getItem('token')
+        const res = await axios.post(`${state.host}/actions/`,action,{ headers: { 'Authorization': 'Bearer '+ token }});
+        return res.data;
+      }
+      catch(err){
+        throw(err);
+      }
+    },
+    async pauseAction({state},pause){
+      try{
+        const token = localStorage.getItem('token')
+        const res = await axios.post(`${state.host}/actions/pause`,pause,{ headers: { 'Authorization': 'Bearer '+ token }});
+        return res.data;
+      }
+      catch(err){
+        throw(err);
+      }
+    },
+    async remainAction({state},remain){
+      try{
+        const token = localStorage.getItem('token')
+        const res = await axios.post(`${state.host}/actions/remain`,remain,{ headers: { 'Authorization': 'Bearer '+ token }});
+        return res.data;
+      }
+      catch(err){
+        throw(err);
+      }
+    },
+    async stopAction({state},stop){
+      try{
+        const token = localStorage.getItem('token')
+        const res = await axios.post(`${state.host}/actions/stop`,stop,{ headers: { 'Authorization': 'Bearer '+ token }});
+        return res.data;
+      }
+      catch(err){
+        throw(err);
+      }
+    },
+    async deleteAction({state,commit},id){
+      try{
+        const token = localStorage.getItem('token')
+        await axios.delete(`${state.host}/actions/${id.action}`,{ headers: { 'Authorization': 'Bearer '+ token }});
+        commit('deleteAction',id);
+      }
+      catch(err){
+        throw(err);
+      }
+    },
+    async authUser({state},user){
+      try{
+        const token = localStorage.getItem('token')
+        const res = await axios.post(`${state.host}/users/auth`,user,{ headers: { 'Authorization': 'Bearer '+ token }});
+        if(res.data.token)
+          localStorage.setItem('token',res.data.token);
+        else
+          throw new Error(res.data.error)
       }
       catch(err){
         throw(err);

@@ -8,7 +8,7 @@
         </div>
 
           <div class="card-body">
-            <Action :gamer="g" @showModal="showModal"/>
+            <Action :gamer="g" @showModal="showModal" @deleteAction="deleteAction"/>
           </div>
       </div>
     </div>
@@ -34,11 +34,11 @@
                     </thead>
                     <tbody>
                         <tr v-for="p in pauses" :key="p._id">
-                        <td>{{p.passedTime}}</td>
-                        <td>{{p.pauseTime}}</td>                         
-                        <td>{{p.duration}}</td>  
-                        <td>{{p.remainTime}}</td>          
-                        <td>{{p.leftTime}}</td>                                 
+                        <td>{{convertSeconds(p.passedTime)}}</td>
+                        <td>{{formatDate(p.pauseTime)}}</td>                         
+                        <td>{{convertSeconds(p.duration)}}</td>  
+                        <td>{{formatDate(p.remainTime)}}</td>          
+                        <td>{{convertSeconds(p.leftTime)}}</td>                                 
                         </tr>
                     </tbody>
                 </table>
@@ -80,6 +80,30 @@ export default {
     showModal(p){
       this.pauses = p
       $('#exampleModal').modal('show')
+    },
+    formatDate(d){
+      if(d){
+        let date = d.split('.')
+        return date[0].replace('T',' ')
+      }
+      else return ''
+    },
+    convertSeconds(sec){
+      if(sec){
+        const h = parseInt(sec/3600);
+        let m = parseInt(sec%3600/60);
+        let s = (sec%3600)%60;
+        m < 10 ? m='0'+m : '';
+        s < 10 ? s='0'+s : '';
+        return h + ':' + m + ':' + s;
+      } 
+      else return ''
+    },
+    deleteAction(id){
+      this.$store.dispatch('deleteAction',id)
+        .catch(err=>{
+          console.error(err);
+        })
     }
   },
   mounted(){
